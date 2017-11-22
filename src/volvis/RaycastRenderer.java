@@ -55,7 +55,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         tFunc = new TransferFunction(volume.getMinimum(), volume.getMaximum());
         
         // uncomment this to initialize the TF with good starting values for the orange dataset 
-        //tFunc.setTestFunc();
+        tFunc.setTestFunc();
         
         
         tFunc.addTFChangeListener(this);
@@ -137,12 +137,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 int val = getVoxel(pixelCoord);
                 
                 // Map the intensity to a grey value by linear scaling
-                voxelColor.r = val/max;
-                voxelColor.g = voxelColor.r;
-                voxelColor.b = voxelColor.r;
-                voxelColor.a = val > 0 ? 1.0 : 0.0;  // this makes intensity 0 completely transparent and the rest opaque
+                //voxelColor.r = val/max;
+                //voxelColor.g = voxelColor.r;
+                //voxelColor.b = voxelColor.r;
+                //voxelColor.a = val > 0 ? 1.0 : 0.0;  // this makes intensity 0 completely transparent and the rest opaque
                 // Alternatively, apply the transfer function to obtain a color
-                // voxelColor = tFunc.getColor(val);
+                voxelColor = tFunc.getColor(val);
                 
                 
                 // BufferedImage expects a pixel color packed as ARGB in an int
