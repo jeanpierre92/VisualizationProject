@@ -29,10 +29,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     TransferFunction tFunc;
     TransferFunctionEditor tfEditor;
     TransferFunction2DEditor tfEditor2D;
+    public static int renderingMode;
     
     public RaycastRenderer() {
         panel = new RaycastRendererPanel(this);
         panel.setSpeedLabel("0");
+        renderingMode = 0;
     }
 
     public void setVolume(Volume vol) {
@@ -156,6 +158,10 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         }
 
     }
+    
+    void mip(double[] viewMatrix) {
+        
+    }
 
 
     private void drawBoundingBox(GL2 gl) {
@@ -230,7 +236,15 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         gl.glGetDoublev(GL2.GL_MODELVIEW_MATRIX, viewMatrix, 0);
 
         long startTime = System.currentTimeMillis();
-        slicer(viewMatrix);    
+        
+        switch (renderingMode) {
+            case 0: 
+                slicer(viewMatrix);
+                break;
+            case 1:
+                mip(viewMatrix);
+                break;
+        }  
         
         long endTime = System.currentTimeMillis();
         double runningTime = (endTime - startTime);
