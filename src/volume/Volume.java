@@ -14,7 +14,8 @@ import java.io.IOException;
 public class Volume {
     
     public Volume(int xd, int yd, int zd) {
-        data = new short[xd*yd*zd];
+        // an easy way to store voxel values in an one dimension array
+        data = new short[xd*yd*zd]; 
         dimX = xd;
         dimY = yd;
         dimZ = zd;

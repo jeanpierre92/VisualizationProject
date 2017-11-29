@@ -81,7 +81,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         return tfEditor;
     }
      
-
+    // get voxel intensity
     short getVoxel(double[] coord) {
 
         if (coord[0] < 0 || coord[0] > volume.getDimX() || coord[1] < 0 || coord[1] > volume.getDimY()
@@ -92,11 +92,40 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         int x = (int) Math.floor(coord[0]);
         int y = (int) Math.floor(coord[1]);
         int z = (int) Math.floor(coord[2]);
-
-        return volume.getVoxel(x, y, z);
+        
+        if(interactiveMode) {
+            return volume.getVoxel(x,y,z);
+        }
+        /* trilinear interpolation */
+        
+        // calculate alpha, beta and gamma
+        double alpha = coord[0] - x;
+        double beta = coord[1] - y;
+        double gamma = coord[2] - z;
+        
+        // intensity values of 8 adjacent pre-defined vetices surrounding the interpolation point
+        int sv0 = volume.getVoxel(x, y, z);
+        int sv1 = volume.getVoxel(x+1, y, z);
+        int sv2 = volume.getVoxel(x, y+1, z);
+        int sv3 = volume.getVoxel(x+1, y+1, z);
+        int sv4 = volume.getVoxel(x, y, z+1);
+        int sv5 = volume.getVoxel(x+1, y, z+1);
+        int sv6 = volume.getVoxel(x, y+1, z+1);
+        int sv7 = volume.getVoxel(x+1, y+1, z+1);
+        
+        // calculate intensity of the given voxel v
+        double sv = (1 - alpha) * (1 - beta) * (1 - gamma) * sv0
+                    + alpha * (1 - beta) * (1 - gamma) * sv1
+                    + (1 - alpha) * beta * (1 - gamma) * sv2
+                    + alpha * beta * (1 - gamma) * sv3
+                    + ( 1 - alpha) * (1 - beta) * gamma * sv4
+                    + alpha * (1 - beta) * gamma * sv5
+                    + (1 - alpha) * beta * gamma * sv6
+                    + alpha * beta * gamma * sv7;
+        
+        return (short) sv;
     }
-
-
+    
     void slicer(double[] viewMatrix) {
 
         // clear image
