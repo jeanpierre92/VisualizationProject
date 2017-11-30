@@ -84,8 +84,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     // get voxel intensity
     short getVoxel(double[] coord) {
 
-        if (coord[0] < 0 || coord[0] > volume.getDimX() || coord[1] < 0 || coord[1] > volume.getDimY()
-                || coord[2] < 0 || coord[2] > volume.getDimZ()) {
+        if (coord[0] < 0 || coord[0] + 1 > volume.getDimX() || coord[1] < 0 || coord[1] + 1 > volume.getDimY()
+                || coord[2] < 0 || coord[2] + 1 > volume.getDimZ()) {
             return 0;
         }
 
