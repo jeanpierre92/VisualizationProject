@@ -93,9 +93,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         int y = (int) Math.floor(coord[1]);
         int z = (int) Math.floor(coord[2]);
         
-        if(interactiveMode) {
-            return volume.getVoxel(x,y,z);
-        }
         /* trilinear interpolation */
         
         // calculate alpha, beta and gamma
