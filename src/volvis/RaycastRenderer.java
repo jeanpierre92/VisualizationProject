@@ -92,6 +92,11 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         int y = (int) Math.floor(coord[1]);
         int z = (int) Math.floor(coord[2]);
         
+        // speed up
+        if(interactiveMode) {
+            return volume.getVoxel(x,y,z);
+        }
+        
         /* trilinear interpolation */
         // calculate alpha, beta and gamma
         double alpha = coord[0] - x;
@@ -217,16 +222,19 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             resolution = 1;
         }
         
-        for (int j = 0; j < image.getHeight(); j += resolution) {
-            for (int i = 0; i < image.getWidth(); i += resolution) {
+        for (int j = 0; j < image.getHeight() - resolution + 1; j += resolution) {
+            for (int i = 0; i < image.getWidth() - resolution + 1; i += resolution) {
                 
                 int maxVal = 0;                        
                 
                 double maxRange = Math.abs(viewVec[0]) > (Math.abs(viewVec[1]) > Math.abs(viewVec[2]) ? volume.getDimY() : volume.getDimZ()) ? volume.getDimX() : (Math.abs(viewVec[1]) > Math.abs(viewVec[2]) ? volume.getDimY() : volume.getDimZ());                       
                 double minRange = maxRange * -1;
 
-                // Retrieve the max value along the ray
-                for (double n = minRange; n < maxRange; n += 3) {
+                // Retrieve the max value along the ray                
+                // Interactive mode sample, set sample step = 3, non-interactive mode, step = 1 
+                int step = interactiveMode ? 1 : 3;
+               
+                for (double n = minRange; n < maxRange; n += step) {
                     pixelCoord[0] = uVec[0] * (i - imageCenter) + vVec[0] * (j - imageCenter)
                                     + viewVec[0] * (n - (maxRange / 2)) + volumeCenter[0];
                     pixelCoord[1] = uVec[1] * (i - imageCenter) + vVec[1] * (j - imageCenter)
@@ -263,6 +271,88 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                         }
                     }
                 }                                                         
+            }
+        }
+    }
+    
+    void compositing(double[] viewMatrix) {
+        // clear image
+        for (int j = 0; j < image.getHeight(); j++) {
+            for (int i = 0; i < image.getWidth(); i++) {
+                image.setRGB(i, j, 0);
+            }
+        }
+
+        // vector uVec and vVec define a plane through the origin, 
+        // perpendicular to the view vector viewVec
+        double[] viewVec = new double[3];
+        double[] uVec = new double[3];
+        double[] vVec = new double[3];
+        VectorMath.setVector(viewVec, viewMatrix[2], viewMatrix[6], viewMatrix[10]);
+        VectorMath.setVector(uVec, viewMatrix[0], viewMatrix[4], viewMatrix[8]);
+        VectorMath.setVector(vVec, viewMatrix[1], viewMatrix[5], viewMatrix[9]);
+
+        // image is square
+        int imageCenter = image.getWidth() / 2;
+
+        double[] pixelCoord = new double[3];
+        double[] volumeCenter = new double[3];
+        VectorMath.setVector(volumeCenter, volume.getDimX() / 2, volume.getDimY() / 2, volume.getDimZ() / 2);
+
+        // sample on a plane through the origin of the volume data
+        double max = volume.getMaximum();
+        TFColor voxelColor = new TFColor();
+        
+        // speed up during interactiveMode by decreasing number of computed pixels 
+        int resolution;
+        if (interactiveMode) {
+            resolution = 3;
+        } else {
+            resolution = 1;
+        }
+        
+        for (int i = 0; i < image.getWidth(); i += resolution) {
+            for (int j = 0; j < image.getHeight(); j += resolution) {
+               
+                TFColor compColor = new TFColor();
+                double maxRange = Math.abs(viewVec[0]) > (Math.abs(viewVec[1]) > Math.abs(viewVec[2]) ? volume.getDimY() : volume.getDimZ()) ? volume.getDimX() : (Math.abs(viewVec[1]) > Math.abs(viewVec[2]) ? volume.getDimY() : volume.getDimZ());
+                double minRange = maxRange * -1;
+
+                
+                for (double n = minRange; n < maxRange; n += 2) {
+                    pixelCoord[0] = uVec[0] * (i - imageCenter) + vVec[0] * (j - imageCenter)
+                            + viewVec[0] * (n - (maxRange / 2)) + volumeCenter[0];
+                    pixelCoord[1] = uVec[1] * (i - imageCenter) + vVec[1] * (j - imageCenter)
+                            + viewVec[1] * (n - (maxRange / 2)) + volumeCenter[1];
+                    pixelCoord[2] = uVec[2] * (i - imageCenter) + vVec[2] * (j - imageCenter)
+                            + viewVec[2] * (n - (maxRange / 2)) + volumeCenter[2];
+
+                    int val = getVoxel(pixelCoord);
+
+                    // Apply the transfer function to obtain a color
+                    voxelColor = tFunc.getColor(val);
+
+                    compColor.a = voxelColor.a * voxelColor.a + (1 - voxelColor.a) * compColor.a;
+                    compColor.r = voxelColor.r * voxelColor.a + (1 - voxelColor.a) * compColor.r;
+                    compColor.g = voxelColor.g * voxelColor.a + (1 - voxelColor.a) * compColor.g;
+                    compColor.b = voxelColor.b * voxelColor.a + (1 - voxelColor.a) * compColor.b;
+                }
+
+                // BufferedImage expects a pixel color packed as ARGB in an int;
+                int c_alpha = compColor.a <= 1.0 ? (int) Math.floor(compColor.a * 255) : 255;
+                int c_red = compColor.r <= 1.0 ? (int) Math.floor(compColor.r * 255) : 255;
+                int c_green = compColor.g <= 1.0 ? (int) Math.floor(compColor.g * 255) : 255;
+                int c_blue = compColor.b <= 1.0 ? (int) Math.floor(compColor.b * 255) : 255;
+
+                int pixelColor = (c_alpha << 24) | (c_red << 16) | (c_green << 8) | c_blue;
+
+                for (int ri = 0; ri < 3; ri++) {
+                    for (int rj = 0; rj < 3; rj++) {
+                        if ((i + ri < image.getHeight()) && (j + rj < image.getWidth())) {
+                            image.setRGB(ri + i, rj + j, pixelColor);
+                        }
+                    }
+                }
             }
         }
     }
@@ -345,6 +435,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             break;
         case 1:
             mip(viewMatrix);
+            break;
+        case 2:
+            compositing(viewMatrix);
             break;
         }
 

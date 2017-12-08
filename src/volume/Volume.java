@@ -38,6 +38,10 @@ public class Volume {
     
     
     public short getVoxel(int x, int y, int z) {
+        short value = 0;
+        if((x >= 255 )|| (y >= 255 ) || (z >= 255 )) {
+            return value;
+        } 
         return data[x + dimX*(y + dimY * z)];
     }
     
