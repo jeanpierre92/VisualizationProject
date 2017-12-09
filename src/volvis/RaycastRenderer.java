@@ -359,7 +359,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         }
     }
     
-    void transfer(double[] viewMatrix, boolean moreResponsive) {
+    void transfer(double[] viewMatrix) {
         // clear image
         for (int j = 0; j < image.getHeight(); j++) {
             for (int i = 0; i < image.getWidth(); i++) {
@@ -386,14 +386,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double max = volume.getMaximum();
         TFColor voxelColor = new TFColor();
 
-        int precision;
-
-        if (moreResponsive) {
-            precision = 20;
-        } else {
-            precision = 1;
-        }
-        
         int resolution;
         if (interactiveMode) {
             resolution = 30;
@@ -432,6 +424,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     double radius = tw.radius;
                     TFColor setColor = tw.color;
 
+                    double minMagnitude = tw.minMagnitude;
+                    double maxMagnitude = tw.maxMagnitude;
+                    
                     VoxelGradient gradient = gradients.getGradient((int) pixelCoord[0], (int) pixelCoord[1], (int) pixelCoord[2]);
                     
                     color.r = setColor.r;
@@ -439,12 +434,16 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     color.b = setColor.b;
                     
                     // gradient-based opacity weighting
-                    if (val == baseIntensity && gradient.mag == 0) {
-                        color.a = setColor.a;
-                    } else if (gradient.mag > 0
-                            && val - (radius * gradient.mag) <= baseIntensity
-                            && baseIntensity <= val + (radius * gradient.mag)) {
-                        color.a = setColor.a * (1 - (1 / radius) * Math.abs((baseIntensity - val) / gradient.mag));
+                    if (minMagnitude <= gradient.mag && maxMagnitude >= gradient.mag) {
+                         if (val == baseIntensity && gradient.mag == 0){
+                             color.a = setColor.a;
+                         } else if (gradient.mag > 0 &&
+                                 val - (radius * gradient.mag) <= baseIntensity && 
+                                 baseIntensity <= val + (radius * gradient.mag)) {
+                             color.a = setColor.a * (1 - (1 / radius) * Math.abs((baseIntensity - val) / gradient.mag));
+                         } else {
+                             color.a = 0;
+                         }
                     } else {
                         color.a = 0;
                     }
@@ -556,7 +555,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             compositing(viewMatrix);
             break;
         case 3:
-            transfer(viewMatrix, interactiveMode);
+            transfer(viewMatrix);
             break;
         }
 

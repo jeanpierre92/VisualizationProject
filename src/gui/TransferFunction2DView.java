@@ -78,7 +78,19 @@ public class TransferFunction2DView extends javax.swing.JPanel {
         g2.fill(baseControlPoint);
         g2.drawLine(xpos, ypos, xpos - (int) (ed.triangleWidget.radius * binWidth * ed.maxGradientMagnitude), 0);
         g2.drawLine(xpos, ypos, xpos + (int) (ed.triangleWidget.radius * binWidth * ed.maxGradientMagnitude), 0);
-        radiusControlPoint = new Ellipse2D.Double(xpos + (ed.triangleWidget.radius * binWidth * ed.maxGradientMagnitude) - DOTSIZE / 2,  0, DOTSIZE, DOTSIZE);
+        double minPercentage = ed.triangleWidget.minMagnitude / ed.maxGradientMagnitude;
+        double maxPercentage = ed.triangleWidget.maxMagnitude / ed.maxGradientMagnitude;
+
+        g2.drawLine(xpos - (int) (ed.triangleWidget.radius * binWidth * (ed.maxGradientMagnitude * minPercentage)),
+                (int) (ypos * (1 - minPercentage)),
+                xpos + (int) (ed.triangleWidget.radius * binWidth * (ed.maxGradientMagnitude * minPercentage)),
+                (int) (ypos * (1 - minPercentage)));
+
+        g2.drawLine(xpos - (int) (ed.triangleWidget.radius * binWidth * (ed.maxGradientMagnitude * maxPercentage)),
+                (int) (ypos * (1 - maxPercentage)),
+                xpos + (int) (ed.triangleWidget.radius * binWidth * (ed.maxGradientMagnitude * maxPercentage)),
+                (int) (ypos * (1 - maxPercentage)));
+        radiusControlPoint = new Ellipse2D.Double(xpos + (ed.triangleWidget.radius * binWidth * ed.maxGradientMagnitude) - DOTSIZE / 2, 0, DOTSIZE, DOTSIZE);
         g2.fill(radiusControlPoint);
     }
     
