@@ -33,6 +33,17 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     TransferFunction2DEditor tfEditor2D;
     public static int renderingMode;
 
+    // ambient reflection coefficient, assuming light source is white
+    TFColor SHADING_AMBIENT_COEFF = new TFColor(0.1, 0.1, 0.1, 1.0);
+    // diffuse reflection coefficient
+    double SHADING_DIFF_COEFF = 0.7;
+    // specular reflection coefficient
+    double SHADING_SPEC_COEFF = 0.2;
+    // exponent used to approximate highligh
+    double SHADING_ALPHA = 10;
+    
+    public boolean shading = false;
+    
     public RaycastRenderer() {
         panel = new RaycastRendererPanel(this);
         panel.setSpeedLabel("0");
@@ -382,7 +393,13 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double[] pixelCoord = new double[3];
         double[] volumeCenter = new double[3];
         VectorMath.setVector(volumeCenter, volume.getDimX() / 2, volume.getDimY() / 2, volume.getDimZ() / 2);
-
+        
+        // parameters to be used to shade
+        double [] NormVec = new double[3];
+        double dotProductNL = 0;
+        double dotProductNH = 0;
+        double colorIncrement = 0;
+        
         double max = volume.getMaximum();
         TFColor voxelColor = new TFColor();
 
@@ -447,10 +464,25 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     } else {
                         color.a = 0;
                     }
+                    
+                    // shading
+                    if (shading) {
+                        // surface normal at voxel
+                        NormVec[0] = gradient.x;
+                        NormVec[1] = gradient.y;
+                        NormVec[2] = gradient.z;
+                        dotProductNL = Math.max(VectorMath.dotproduct(viewVec, NormVec) / (VectorMath.length(NormVec) + 1e-6), 0);
+                        dotProductNH = dotProductNL;
+                        colorIncrement = SHADING_SPEC_COEFF * Math.pow(dotProductNH, SHADING_ALPHA);
+                        color.r = SHADING_AMBIENT_COEFF.r + color.r * (SHADING_DIFF_COEFF * dotProductNL) + colorIncrement;
+                        color.g = SHADING_AMBIENT_COEFF.g + color.g * (SHADING_DIFF_COEFF * dotProductNL) + colorIncrement;
+                        color.b = SHADING_AMBIENT_COEFF.b + color.b * (SHADING_DIFF_COEFF * dotProductNL) + colorIncrement;
+                    }
 
                     voxelColor.r = (color.r * color.a) + (voxelColor.r * (1 - color.a));
                     voxelColor.g = (color.g * color.a) + (voxelColor.g * (1 - color.a));
                     voxelColor.b = (color.b * color.a) + (voxelColor.b * (1 - color.a));
+                    voxelColor.a = (1 - color.a) * voxelColor.a + color.a;
                 }
 
                 // BufferedImage expects a pixel color packed as ARGB in an int
