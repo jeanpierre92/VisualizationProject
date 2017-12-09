@@ -359,7 +359,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         }
     }
     
-    void transfer(double[] viewMatrix, boolean moreResponsive) {
+    void transfer(double[] viewMatrix) {
         // clear image
         for (int j = 0; j < image.getHeight(); j++) {
             for (int i = 0; i < image.getWidth(); i++) {
@@ -386,14 +386,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double max = volume.getMaximum();
         TFColor voxelColor = new TFColor();
 
-        int precision;
-
-        if (moreResponsive) {
-            precision = 20;
-        } else {
-            precision = 1;
-        }
-        
         int resolution;
         if (interactiveMode) {
             resolution = 30;
@@ -556,7 +548,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             compositing(viewMatrix);
             break;
         case 3:
-            transfer(viewMatrix, interactiveMode);
+            transfer(viewMatrix);
             break;
         }
 
