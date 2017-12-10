@@ -180,12 +180,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 int val = getVoxel(pixelCoord);
 
                 // Map the intensity to a grey value by linear scaling
-                //voxelColor.r = val/max;
-                //voxelColor.g = voxelColor.r;
-                //voxelColor.b = voxelColor.r;
-                //voxelColor.a = val > 0 ? 1.0 : 0.0;  // this makes intensity 0 completely transparent and the rest opaque
+                voxelColor.r = val/max;
+                voxelColor.g = voxelColor.r;
+                voxelColor.b = voxelColor.r;
+                voxelColor.a = val > 0 ? 1.0 : 0.0;  // this makes intensity 0 completely transparent and the rest opaque
                 // Alternatively, apply the transfer function to obtain a color
-                voxelColor = tFunc.getColor(val);
+                //voxelColor = tFunc.getColor(val);
 
                 // BufferedImage expects a pixel color packed as ARGB in an int
                 int c_alpha = voxelColor.a <= 1.0 ? (int) Math.floor(voxelColor.a * 255) : 255;
@@ -327,7 +327,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         for (int i = 0; i < image.getWidth(); i += resolution) {
             for (int j = 0; j < image.getHeight(); j += resolution) {
                
-                TFColor compColor = new TFColor();
+                TFColor compColor = new TFColor(0,0,0,0);
                 double maxRange = Math.abs(viewVec[0]) > (Math.abs(viewVec[1]) > Math.abs(viewVec[2]) ? volume.getDimY() : volume.getDimZ()) ? volume.getDimX() : (Math.abs(viewVec[1]) > Math.abs(viewVec[2]) ? volume.getDimY() : volume.getDimZ());
                 double minRange = maxRange * -1;
 
